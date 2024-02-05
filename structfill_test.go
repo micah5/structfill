@@ -18,28 +18,28 @@ type Employee struct {
 	Address Address
 }
 
-func TestFillStructFromMap_SimpleStruct(t *testing.T) {
+func TestStructFill_SimpleStruct(t *testing.T) {
 	var person Employee
 	inputMap := map[string]any{
 		"name": "Alice",
 		"age":  29,
 	}
 
-	err := FillStructFromMap(&person, inputMap)
+	err := StructFill(&person, inputMap)
 	assert.NoError(t, err)
 	assert.Equal(t, Employee{Name: "Alice", Age: 29, Address: Address{Street: "Main St", Height: 1.8}}, person)
 }
 
-func TestFillStructFromMap_WithDefaults(t *testing.T) {
+func TestStructFill_WithDefaults(t *testing.T) {
 	var person Employee
 	inputMap := map[string]any{}
 
-	err := FillStructFromMap(&person, inputMap)
+	err := StructFill(&person, inputMap)
 	assert.NoError(t, err)
 	assert.Equal(t, Employee{Name: "John Doe", Age: 30, Address: Address{Street: "Main St", Height: 1.8}}, person)
 }
 
-func TestFillStructFromMap_WithNestedStruct(t *testing.T) {
+func TestStructFill_WithNestedStruct(t *testing.T) {
 	var person Employee
 	inputMap := map[string]any{
 		"address": map[string]any{
@@ -48,27 +48,27 @@ func TestFillStructFromMap_WithNestedStruct(t *testing.T) {
 		},
 	}
 
-	err := FillStructFromMap(&person, inputMap)
+	err := StructFill(&person, inputMap)
 	assert.NoError(t, err)
 	assert.Equal(t, Employee{Name: "John Doe", Age: 30, Address: Address{Street: "Main St", City: "Springfield", Height: 2.0}}, person)
 }
 
-func TestFillStructFromMap_ValidationError(t *testing.T) {
+func TestStructFill_ValidationError(t *testing.T) {
 	var person Employee
 	inputMap := map[string]any{
 		"age": 17, // Below the minimum age defined in the `validate` tag
 	}
 
-	err := FillStructFromMap(&person, inputMap)
+	err := StructFill(&person, inputMap)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "value 17 is less than min 18")
 }
 
-func TestFillStructFromMap_NonPointerInput(t *testing.T) {
+func TestStructFill_NonPointerInput(t *testing.T) {
 	person := Employee{} // Not a pointer
 	inputMap := map[string]any{}
 
-	err := FillStructFromMap(person, inputMap)
+	err := StructFill(person, inputMap)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "provided type must be a pointer to a struct")
 }
@@ -84,7 +84,7 @@ type School struct {
 	Classrooms []Classroom
 }
 
-func TestFillStructFromMap_SliceOfPrimitives(t *testing.T) {
+func TestStructFill_SliceOfPrimitives(t *testing.T) {
 	var school School
 	inputMap := map[string]any{
 		"students": []string{"Alice", "Bob"},
@@ -95,7 +95,7 @@ func TestFillStructFromMap_SliceOfPrimitives(t *testing.T) {
 		},
 	}
 
-	err := FillStructFromMap(&school, inputMap)
+	err := StructFill(&school, inputMap)
 	assert.NoError(t, err)
 	assert.Equal(t, School{
 		Students: []string{"Alice", "Bob"},
@@ -113,7 +113,7 @@ type Simple struct {
 	Items2 map[string]int
 }
 
-func TestFillStructFromMap_MapOfPrimitives(t *testing.T) {
+func TestStructFill_MapOfPrimitives(t *testing.T) {
 	var simple Simple
 	inputMap := map[string]any{
 		"items": map[string]string{
@@ -126,7 +126,7 @@ func TestFillStructFromMap_MapOfPrimitives(t *testing.T) {
 		},
 	}
 
-	err := FillStructFromMap(&simple, inputMap)
+	err := StructFill(&simple, inputMap)
 	assert.NoError(t, err)
 	assert.Equal(t, Simple{
 		Items:  map[string]string{"key1": "value1", "key2": "value2"},
@@ -138,7 +138,7 @@ type Company struct {
 	Team map[string][]Employee
 }
 
-func TestFillStructFromMap_NestedMapOfStructs(t *testing.T) {
+func TestStructFill_NestedMapOfStructs(t *testing.T) {
 	var company Company
 	inputMap := map[string]any{
 		"team": map[string][]Employee{
@@ -152,7 +152,7 @@ func TestFillStructFromMap_NestedMapOfStructs(t *testing.T) {
 		},
 	}
 
-	err := FillStructFromMap(&company, inputMap)
+	err := StructFill(&company, inputMap)
 	assert.NoError(t, err)
 	assert.Equal(t, Company{
 		Team: map[string][]Employee{
