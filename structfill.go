@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func StructFill(structType any, inputMap map[string]any) error {
+func Fill(structType any, inputMap map[string]any) error {
 	structVal := reflect.ValueOf(structType)
 	if structVal.Kind() != reflect.Ptr || structVal.Elem().Kind() != reflect.Struct {
 		return errors.New("provided type must be a pointer to a struct")
@@ -33,13 +33,13 @@ func StructFill(structType any, inputMap map[string]any) error {
 				if !ok {
 					return fmt.Errorf("invalid type for field %s, expected map[string]any for nested struct", fieldName)
 				}
-				err := StructFill(field.Addr().Interface(), nestedMap)
+				err := Fill(field.Addr().Interface(), nestedMap)
 				if err != nil {
 					return err
 				}
 			} else {
 				// Initialize nested structs with their default values recursively
-				err := StructFill(field.Addr().Interface(), make(map[string]any))
+				err := Fill(field.Addr().Interface(), make(map[string]any))
 				if err != nil {
 					return err
 				}
@@ -90,7 +90,7 @@ func StructFill(structType any, inputMap map[string]any) error {
 							if !ok {
 								return fmt.Errorf("invalid type for slice element in field %s, expected map[string]any for nested struct slice element", fieldName)
 							}
-							err := StructFill(slice.Index(j).Addr().Interface(), nestedMap)
+							err := Fill(slice.Index(j).Addr().Interface(), nestedMap)
 							if err != nil {
 								return err
 							}
