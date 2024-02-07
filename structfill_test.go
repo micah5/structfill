@@ -166,3 +166,25 @@ func TestFill_NestedMapOfStructs(t *testing.T) {
 		},
 	}, company)
 }
+
+// Embedded
+type B struct {
+	A
+	Prop2 int
+}
+
+type A struct {
+	Prop1 string
+}
+
+func TestFill_EmbeddedStruct(t *testing.T) {
+	var b B
+	inputMap := map[string]any{
+		"prop1": "value1",
+		"prop2": 2,
+	}
+
+	err := Fill(&b, inputMap)
+	assert.NoError(t, err)
+	assert.Equal(t, B{A: A{Prop1: "value1"}, Prop2: 2}, b)
+}
