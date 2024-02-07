@@ -188,3 +188,56 @@ func TestFill_EmbeddedStruct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, B{A: A{Prop1: "value1"}, Prop2: 2}, b)
 }
+
+// Interfaces
+type Animal interface {
+	Speak() string
+}
+
+type Dog struct {
+	Pet
+}
+
+func (d Dog) Speak() string {
+	return "Woof!"
+}
+
+type Cat struct {
+	Pet
+	Wild bool
+}
+
+func (c Cat) Speak() string {
+	return "Meow!"
+}
+
+type Pet struct {
+	Name string
+}
+
+type House struct {
+	Pets []Animal
+}
+
+func TestFill_Interface(t *testing.T) {
+	var house House
+	inputMap := map[string]any{
+		"pets": []map[string]any{
+			{"type": "Dog", "name": "Rex"},
+			{"type": "Cat", "name": "Whiskers", "wild": true},
+		},
+	}
+	var typeRegistry = map[string]func() any{
+		"Dog": func() any { return &Dog{} },
+		"Cat": func() any { return &Cat{} },
+	}
+
+	err := Fill(&house, inputMap, typeRegistry)
+	assert.NoError(t, err)
+	assert.Equal(t, House{
+		Pets: []Animal{
+			Dog{Pet{Name: "Rex"}},
+			Cat{Pet: Pet{Name: "Whiskers"}, Wild: true},
+		},
+	}, house)
+}
