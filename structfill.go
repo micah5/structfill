@@ -117,8 +117,11 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 				}
 
 				typeIdentifier, ok := elemMap["type"].(string)
-				if !ok || typeRegistry[typeIdentifier] == nil {
-					return fmt.Errorf("type identifier %s missing or not found in type registry for interface slice element", typeIdentifier)
+				if !ok {
+					return fmt.Errorf("type identifier %s missing for interface slice element", typeIdentifier)
+				}
+				if typeRegistry[typeIdentifier] == nil {
+					return fmt.Errorf("type identifier %s not found in type registry %v", typeIdentifier, typeRegistry)
 				}
 
 				newInstance := typeRegistry[typeIdentifier]()   // Instantiate new type
@@ -139,7 +142,7 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 						if !ok {
 							return fmt.Errorf("invalid type for slice element in field %s, expected map[string]any for nested struct slice element", fieldName)
 						}
-						err := Fill(slice.Index(j).Addr().Interface(), nestedMap)
+						err := Fill(slice.Index(j).Addr().Interface(), nestedMap, typeRegistry)
 						if err != nil {
 							return err
 						}
