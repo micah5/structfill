@@ -118,7 +118,7 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 
 				typeIdentifier, ok := elemMap["type"].(string)
 				if !ok || typeRegistry[typeIdentifier] == nil {
-					return fmt.Errorf("type identifier missing or not found in type registry for interface slice element")
+					return fmt.Errorf("type identifier %s missing or not found in type registry for interface slice element", typeIdentifier)
 				}
 
 				newInstance := typeRegistry[typeIdentifier]()   // Instantiate new type
