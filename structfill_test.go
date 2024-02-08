@@ -1,7 +1,11 @@
 package structfill
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
+	"log"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -240,4 +244,40 @@ func TestFill_Interface(t *testing.T) {
 			&Cat{Pet: Pet{Name: "Whiskers"}, Wild: true},
 		},
 	}, house)
+}
+
+// Log
+func TestFill_WarningForMissingTypeIdentifier(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer func() {
+		log.SetOutput(os.Stderr)
+	}()
+
+	var house House
+	inputMap := map[string]any{
+		"pets": []map[string]any{
+			{"type": "Dog", "name": "Rex"},
+			{"type": "Cat", "name": "Whiskers", "wild": true},
+			{"type": "Parrot", "name": "Polly"}, // Missing type identifier
+		},
+	}
+	var typeRegistry = map[string]func() any{
+		"Dog": func() any { return &Dog{} },
+		"Cat": func() any { return &Cat{} },
+	}
+
+	err := Fill(&house, inputMap, typeRegistry)
+	assert.NoError(t, err)
+	assert.Equal(t, House{
+		Pets: []Animal{
+			&Dog{Pet{Name: "Rex"}},
+			&Cat{Pet: Pet{Name: "Whiskers"}, Wild: true},
+		},
+	}, house)
+
+	// Check the buffer for the expected warning message
+	if !strings.Contains(buf.String(), "warning: type identifier") {
+		t.Errorf("Expected warning message for missing type identifier not found in log output")
+	}
 }

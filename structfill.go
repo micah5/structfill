@@ -3,6 +3,7 @@ package structfill
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -107,9 +108,11 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 		}
 
 		sliceType := field.Type().Elem()
-		slice := reflect.MakeSlice(reflect.SliceOf(sliceType), inputValueReflect.Len(), inputValueReflect.Len())
 
 		if sliceType.Kind() == reflect.Interface {
+			// Handle slices of interfaces differently
+			var dynamicSlice reflect.Value
+
 			for j := 0; j < inputValueReflect.Len(); j++ {
 				elemMap, ok := inputValueReflect.Index(j).Interface().(map[string]any)
 				if !ok {
@@ -118,10 +121,11 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 
 				typeIdentifier, ok := elemMap["type"].(string)
 				if !ok {
-					return fmt.Errorf("type identifier %s missing for interface slice element", typeIdentifier)
+					return fmt.Errorf("type identifier missing for interface slice element")
 				}
 				if typeRegistry[typeIdentifier] == nil {
-					return fmt.Errorf("type identifier %s not found in type registry %v", typeIdentifier, typeRegistry)
+					log.Printf("warning: type identifier %s not found in type registry, skipping", typeIdentifier)
+					continue // Skip this element
 				}
 
 				newInstance := typeRegistry[typeIdentifier]()   // Instantiate new type
@@ -130,40 +134,33 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 					return err
 				}
 
-				// Create a reflect.Value of the new instance
-				newInstanceValue := reflect.ValueOf(newInstance)
-
-				// Check if the slice element type (interface) is satisfied by the new instance as is (pointer)
-				if newInstanceValue.Type().Implements(sliceType) {
-					slice.Index(j).Set(newInstanceValue) // Set the pointer directly if it satisfies the interface
-				} else if newInstanceValue.Elem().Type().Implements(sliceType) {
-					slice.Index(j).Set(newInstanceValue.Elem()) // Set the value if the value satisfies the interface
-				} else {
-					return fmt.Errorf("new instance does not satisfy the slice element interface")
+				if !dynamicSlice.IsValid() {
+					dynamicSlice = reflect.MakeSlice(reflect.SliceOf(sliceType), 0, inputValueReflect.Len())
 				}
+
+				newInstanceValue := reflect.ValueOf(newInstance)
+				dynamicSlice = reflect.Append(dynamicSlice, newInstanceValue)
 			}
-			field.Set(slice)
+
+			if dynamicSlice.IsValid() {
+				field.Set(dynamicSlice)
+			}
 		} else {
+			// Handle slices of primitives and structs as before
+			slice := reflect.MakeSlice(reflect.SliceOf(sliceType), inputValueReflect.Len(), inputValueReflect.Cap())
 			for j := 0; j < inputValueReflect.Len(); j++ {
 				elem := inputValueReflect.Index(j)
-				if sliceType.Kind() == reflect.Struct {
-					if elem.Kind() == reflect.Map {
-						nestedMap, ok := elem.Interface().(map[string]any)
-						if !ok {
-							return fmt.Errorf("invalid type for slice element in field %s, expected map[string]any for nested struct slice element", fieldName)
-						}
-						err := Fill(slice.Index(j).Addr().Interface(), nestedMap, typeRegistry)
-						if err != nil {
-							return err
-						}
-					} else {
-						return fmt.Errorf("invalid type for struct slice element in field %s", fieldName)
+				if sliceType.Kind() == reflect.Struct && elem.Kind() == reflect.Map {
+					nestedMap, ok := elem.Interface().(map[string]any)
+					if !ok {
+						return fmt.Errorf("invalid type for slice element in field %s, expected map[string]any for nested struct slice element", fieldName)
+					}
+					err := Fill(slice.Index(j).Addr().Interface(), nestedMap, typeRegistry)
+					if err != nil {
+						return err
 					}
 				} else {
 					// Convert each element to the correct type and set it in the slice
-					if !slice.Index(j).CanSet() {
-						return fmt.Errorf("cannot set slice element in field %s", fieldName)
-					}
 					newValue, err := convertType(elem.Interface(), sliceType)
 					if err != nil {
 						return fmt.Errorf("error converting slice element for field %s: %v", fieldName, err)
