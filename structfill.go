@@ -130,12 +130,17 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 					return err
 				}
 
-				fmt.Printf("Type of slice: %T\n", slice.Interface())
-				fmt.Printf("Type of newInstance: %T\n", newInstance)
-				fmt.Printf("Expected type in slice at index %d: %v\n", j, slice.Index(j).Type())
-				fmt.Printf("Value of newInstance: %#v\n", newInstance)
-				fmt.Printf("Slice content before operation: %#v\n", slice.Interface())
-				slice.Index(j).Set(reflect.ValueOf(newInstance).Elem()) // Make sure to set the instantiated type back to the slice
+				// Create a reflect.Value of the new instance
+				newInstanceValue := reflect.ValueOf(newInstance)
+
+				// Check if the slice element type (interface) is satisfied by the new instance as is (pointer)
+				if newInstanceValue.Type().Implements(sliceType) {
+					slice.Index(j).Set(newInstanceValue) // Set the pointer directly if it satisfies the interface
+				} else if newInstanceValue.Elem().Type().Implements(sliceType) {
+					slice.Index(j).Set(newInstanceValue.Elem()) // Set the value if the value satisfies the interface
+				} else {
+					return fmt.Errorf("new instance does not satisfy the slice element interface")
+				}
 			}
 			field.Set(slice)
 		} else {

@@ -198,7 +198,7 @@ type Dog struct {
 	Pet
 }
 
-func (d Dog) Speak() string {
+func (d *Dog) Speak() string {
 	return "Woof!"
 }
 
@@ -207,7 +207,7 @@ type Cat struct {
 	Wild bool
 }
 
-func (c Cat) Speak() string {
+func (c *Cat) Speak() string {
 	return "Meow!"
 }
 
@@ -236,8 +236,8 @@ func TestFill_Interface(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, House{
 		Pets: []Animal{
-			Dog{Pet{Name: "Rex"}},
-			Cat{Pet: Pet{Name: "Whiskers"}, Wild: true},
+			&Dog{Pet{Name: "Rex"}},
+			&Cat{Pet: Pet{Name: "Whiskers"}, Wild: true},
 		},
 	}, house)
 }
