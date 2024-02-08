@@ -130,6 +130,11 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 					return err
 				}
 
+				fmt.Printf("Type of slice: %T\n", slice.Interface())
+				fmt.Printf("Type of newInstance: %T\n", newInstance)
+				fmt.Printf("Expected type in slice at index %d: %v\n", j, slice.Index(j).Type())
+				fmt.Printf("Value of newInstance: %#v\n", newInstance)
+				fmt.Printf("Slice content before operation: %#v\n", slice.Interface())
 				slice.Index(j).Set(reflect.ValueOf(newInstance).Elem()) // Make sure to set the instantiated type back to the slice
 			}
 			field.Set(slice)
