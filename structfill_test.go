@@ -246,6 +246,48 @@ func TestFill_Interface(t *testing.T) {
 	}, house)
 }
 
+// Deep nested
+type Level3 struct {
+	Prop5 string
+}
+
+type Level2 struct {
+	Prop3 string
+	Prop4 []Level3
+}
+
+type Level1 struct {
+	Prop1 string
+	Prop2 Level2
+}
+
+func TestFill_DeepNestedStruct(t *testing.T) {
+	var l1 Level1
+	inputMap := map[string]any{
+		"prop1": "value1",
+		"prop2": map[string]any{
+			"prop3": "value3",
+			"prop4": []map[string]any{
+				{"prop5": "value5"},
+				{"prop5": "value6"},
+			},
+		},
+	}
+
+	err := Fill(&l1, inputMap)
+	assert.NoError(t, err)
+	assert.Equal(t, Level1{
+		Prop1: "value1",
+		Prop2: Level2{
+			Prop3: "value3",
+			Prop4: []Level3{
+				{Prop5: "value5"},
+				{Prop5: "value6"},
+			},
+		},
+	}, l1)
+}
+
 // Log
 func TestFill_WarningForMissingTypeIdentifier(t *testing.T) {
 	var buf bytes.Buffer

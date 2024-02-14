@@ -150,6 +150,7 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 			slice := reflect.MakeSlice(reflect.SliceOf(sliceType), inputValueReflect.Len(), inputValueReflect.Cap())
 			for j := 0; j < inputValueReflect.Len(); j++ {
 				elem := inputValueReflect.Index(j)
+				fmt.Println("slice: ", sliceType.Kind(), elem.Kind())
 				if sliceType.Kind() == reflect.Struct && elem.Kind() == reflect.Map {
 					nestedMap, ok := elem.Interface().(map[string]any)
 					if !ok {
@@ -162,6 +163,7 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 				} else {
 					// Convert each element to the correct type and set it in the slice
 					newValue, err := convertType(elem.Interface(), sliceType)
+					fmt.Println(newValue)
 					if err != nil {
 						return fmt.Errorf("error converting slice element for field %s: %v", fieldName, err)
 					}
