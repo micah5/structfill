@@ -2,6 +2,7 @@ package structfill
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
@@ -286,6 +287,48 @@ func TestFill_DeepNestedStruct(t *testing.T) {
 			},
 		},
 	}, l1)
+}
+
+// Enums
+type Shape int
+
+const (
+	Rectangle Shape = iota
+	Circle
+)
+
+func (d Shape) String() string {
+	return [...]string{
+		"Rectangle",
+		"Semicircle",
+	}[d]
+}
+
+func (d *Shape) Set(s string) error {
+	switch s {
+	case "Rectangle":
+		*d = Rectangle
+	case "Circle":
+		*d = Circle
+	default:
+		return fmt.Errorf("invalid shape: %s", s)
+	}
+	return nil
+}
+
+type Figure struct {
+	Shape Shape
+}
+
+func TestFill_Enum(t *testing.T) {
+	var figure Figure
+	inputMap := map[string]any{
+		"shape": "Rectangle",
+	}
+
+	err := Fill(&figure, inputMap)
+	assert.NoError(t, err)
+	assert.Equal(t, Figure{Shape: Rectangle}, figure)
 }
 
 // Log

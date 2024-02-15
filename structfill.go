@@ -75,6 +75,20 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 		return nil // Skip further processing
 	}
 
+	// Check for and call the Set method if it exists
+	setter := field.Addr().MethodByName("Set")
+	if setter.IsValid() && setter.Type().NumIn() == 1 && setter.Type().In(0).Kind() == reflect.String {
+		inputStr, ok := inputValue.(string)
+		if !ok {
+			return fmt.Errorf("expected string for field %s with Set method", fieldName)
+		}
+		errValues := setter.Call([]reflect.Value{reflect.ValueOf(inputStr)})
+		if len(errValues) == 1 && !errValues[0].IsNil() { // assuming Set method returns an error
+			return errValues[0].Interface().(error)
+		}
+		return nil
+	}
+
 	switch field.Kind() {
 	case reflect.String:
 		if val, ok := inputValue.(string); ok {
@@ -167,7 +181,6 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 				} else {
 					// Convert each element to the correct type and set it in the slice
 					newValue, err := convertType(elem.Interface(), sliceType)
-					fmt.Println(newValue)
 					if err != nil {
 						return fmt.Errorf("error converting slice element for field %s: %v", fieldName, err)
 					}
