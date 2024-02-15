@@ -150,8 +150,12 @@ func fillStructField(field reflect.Value, fieldType reflect.StructField, inputMa
 			slice := reflect.MakeSlice(reflect.SliceOf(sliceType), inputValueReflect.Len(), inputValueReflect.Cap())
 			for j := 0; j < inputValueReflect.Len(); j++ {
 				elem := inputValueReflect.Index(j)
-				fmt.Println("slice: ", sliceType.Kind(), elem.Kind())
-				if sliceType.Kind() == reflect.Struct && elem.Kind() == reflect.Map {
+				elemKind := elem.Kind()
+				if elemKind == reflect.Interface {
+					elem = elem.Elem()
+					elemKind = elem.Kind()
+				}
+				if sliceType.Kind() == reflect.Struct && elemKind == reflect.Map {
 					nestedMap, ok := elem.Interface().(map[string]any)
 					if !ok {
 						return fmt.Errorf("invalid type for slice element in field %s, expected map[string]any for nested struct slice element", fieldName)
